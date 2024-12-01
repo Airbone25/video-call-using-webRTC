@@ -20,6 +20,10 @@ io.on('connect',(socket)=>{
         socket.join(roomId)
         socket.to(roomId).emit('user-connected',userId)
     })
+
+    socket.on('disconnect',(roomId,userId)=>{
+        socket.to(roomId).emit('user-disconnected',userId)
+    })
 })
 
 server.listen(3000)

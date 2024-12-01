@@ -9,22 +9,50 @@ const videoGrid = document.getElementById('video-grid')
 const video = document.createElement('video')
 video.muted = true
 
+let peers = {}
+
 navigator.mediaDevices.getUserMedia({
     video: true,
     audio: true
 }).then(stream=>{
     addVideoStream(video,stream)
-}).catch(error=>console.error(error.message))
 
+    peer.on('call',call=>{
+        call.answer(stream)
+        const video = document.createElement('video')
+        call.on('stream',userStream=>{
+            addVideoStream(video,userStream)
+        })
+    })
+
+    socket.on('user-connected',userId=>{
+        connectToNewUser(userId,stream)
+    })
+})
+
+socket.on('user-disconnected',userId=>{
+    if(peers[userId]){
+        peers[userId].close()
+    }
+})
 
 peer.on('open',id=>{
     socket.emit('join-room',ROOMID,id)
 })
 
-socket.on('user-connected',userId=>{
-    console.log(userId)
-})
 
+function connectToNewUser(userId,stream){
+    const call = peer.call(userId,stream)
+    const video = document.createElement('video')
+    call.on('stream',userStream=>{
+        addVideoStream(video,userStream)
+    })
+    call.on('close',()=>{
+        video.remove()
+    })
+
+    peers[userId] = call
+}
 
 function addVideoStream(video,stream){
     video.srcObject = stream
